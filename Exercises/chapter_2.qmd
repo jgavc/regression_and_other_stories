@@ -1,0 +1,50 @@
+---
+title: "Exercises Chapter 2"
+author: "JC"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(baseballr)
+```
+
+2.1)
+
+```{r}
+fg_data_2023 <- fg_bat_leaders()
+head(fg_data_2023)
+```
+
+```{r}
+fg_data_2023 |>
+  filter(G > 140) |> 
+  ggplot(aes(x = Positional, y = WAR)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+There is a slight upward trend, harder positions are associated with more WAR it is not that strong.
+
+```{r}
+fg_data_2023 |>
+  filter(G > 140) |> 
+  ggplot(aes(x = Offense, y = WAR)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+Offense has a very strong linear relationship with WAR.
+
+```{r}
+fg_data_2023 |>
+  filter(G > 140) |> 
+  ggplot(aes(x = Defense, y = WAR)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+Defense has a lesser correlation with WAR.
+
+Takeaway: offense is the main thing that drives war, positional adjustment has a positive correlation but not a strong slope. Good defense is helpful, but less impact than offense.
