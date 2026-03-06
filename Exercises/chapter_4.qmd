@@ -1,0 +1,58 @@
+---
+title: "Exercises Chapter 2"
+author: "JC"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(baseballr)
+```
+
+4.1)
+
+```{r}
+n <- 1000
+n_treatment <- 500
+n_control <- 500
+prop_treatment <- .5
+prop_control <- .4
+
+sd_treatment <- sqrt(.5*(1 - .5)/n_treatment)
+sd_control <- sqrt(.4*(1 - .4)/n_control)
+prop_treatment;prop_control;sd_treatment;sd_control
+```
+
+```{r}
+prop_diff <- prop_treatment - prop_control
+prop_diff_se <- sqrt(sd_treatment^2 + sd_control^2)
+prop_diff;prop_diff_se
+```
+
+4.2)
+
+Let's assume that 55% of men vote for a candidate and 45% of women vote for a candidate. Then we have the standard deviations of $\sqrt{(.55)(1-.55)/n_{men}},\sqrt{(.45)(1 - .45)/n_{women})}$ respectively. That happens to be equal. Now to get a standard error of less than 5 percentage points we need:
+
+$$
+\sqrt{.55(1-.55)/{n_{men}}+.45(1-.45)/n_{women}}
+$$
+
+If we assume we can get an equal sample of men and women, we have:
+
+$$
+\sqrt{.55(1-.55)/n_{group}}=.05,.55(1-.55)/n_{group}=.05^2,.55,n_{group}=1/(.05^2(.55(1-.55)))=99
+$$
+
+```{r}
+#prop_men <- .55
+#prop_women <- .45
+n_group <-  1/(.05^2*(.55*(1-.55)));
+n_group
+```
+
+```{r}
+se_men <- sqrt(.55*(1 -.55)/(n_group));se_men
+se_women <- sqrt(.45*(1-.45)/(n_group));se_women
+se_total <- sqrt(se_men^2 + se_women^2);se_total
+```
