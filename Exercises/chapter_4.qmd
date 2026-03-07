@@ -8,6 +8,7 @@ editor: visual
 ```{r}
 library(tidyverse)
 library(baseballr)
+library(rosdata)
 ```
 
 4.1)
@@ -47,7 +48,7 @@ $$
 ```{r}
 #prop_men <- .55
 #prop_women <- .45
-n_group <-  1/(.05^2*(.55*(1-.55)));
+n_group <-  2*.55*(1 - .55)/(.05^2);
 n_group
 ```
 
@@ -55,4 +56,35 @@ n_group
 se_men <- sqrt(.55*(1 -.55)/(n_group));se_men
 se_women <- sqrt(.45*(1-.45)/(n_group));se_women
 se_total <- sqrt(se_men^2 + se_women^2);se_total
+```
+
+4.3)
+
+```{r}
+p_1 <- .3
+p_2 <- .4
+n <- 20
+r_1 <- rbinom(100000,20,p_1)
+r_2 <- rbinom(100000,20,p_2)
+mean(r_1 < r_2)
+```
+
+4.4)
+
+Lets say we want a 95% chance of detecting, around n = 135.
+
+```{r}
+p_1 <- .3
+p_2 <- .4
+n <- 135
+r_1 <- rbinom(100000,n,p_1)
+r_2 <- rbinom(100000,n,p_2)
+mean(r_1 < r_2)
+```
+
+4.6)
+
+```{r}
+read.table("Data/ROS-Examples-master/Girls/girls.dat",
+           skip = 1)
 ```
