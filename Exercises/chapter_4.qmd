@@ -85,6 +85,220 @@ mean(r_1 < r_2)
 4.6)
 
 ```{r}
-read.table("Data/ROS-Examples-master/Girls/girls.dat",
+girls <- read.table("Data/ROS-Examples-master/Girls/girls.dat",
            skip = 1)
 ```
+
+a\)
+
+Standard deviation in dataset:
+
+```{r}
+obs_sd <- sd(girls$V1); obs_sd
+```
+
+```{r}
+avg_prop <- mean(girls$V1)
+avg_prop
+```
+
+```{r}
+exp_sd <- sqrt(avg_prop*(1 - avg_prop)/3900); exp_sd
+```
+
+The standard deviation is about what we would expect.
+
+```{r}
+diff <- obs_sd - exp_sd
+diff
+```
+
+b\)
+
+```{r}
+test_stat <- obs_sd^2 *(24 - 1)/exp_sd^2
+test_stat
+pchisq(test_stat,df = 23)
+```
+
+A p-value of .096 indicates there is no significant difference between the observed and hypothesized value.
+
+4.7)
+
+```{r}
+y <- 0;n <- 50
+```
+
+Basic CI:
+
+```{r}
+est <- y
+se <- sqrt(est*(1 - est)/n)
+se
+```
+
+```{r}
+est + qnorm(c(.025,.975))*se
+```
+
+Jeffsonian CI:
+
+```{r}
+est_alt <- (y + 2)/(n + 4)
+est_se <- sqrt(est_alt*(1 - est_alt)/(n + 4));
+est_se
+```
+
+```{r}
+est_alt + qnorm(c(.025,.975))*est_se
+```
+
+But we would really have the lower interval be zero.
+
+4.8)
+
+a\)
+
+The point estimate would be $\log(1.42)$:
+
+```{r}
+log(1.42)
+```
+
+b\)
+
+We know that the interval is about 1.96 SEs wide in each direction so:
+
+```{r}
+se <- (log(1.98) - log(1.42))/1.96;se
+```
+
+4.9)
+
+WE have $\theta=p(1)+(1-p)\frac{1}{4}=1/4+3/4p$
+
+Then since $\hat{\theta} = .6$:
+
+```{r}
+theta_hat = .6
+p = 4/3*(theta_hat - 1/4);
+p
+```
+
+And:
+
+$$
+SE(\hat{p})=\frac{4}{3}SE(\hat{\theta})
+$$
+
+```{r}
+theta_se <- sqrt(theta_hat*(1 - theta_hat)/100);theta_se
+p_se <- 4/3*theta_se
+p + qnorm(c(.025,.975))*p_se
+```
+
+```{r}
+n <- 100
+prop <- .6
+prop_guess <- .25
+```
+
+```{r}
+prop_diff <- prop - prop_guess
+prop_se <- sqrt(prop*(1 - prop)/n)
+prop_guess_se <- sqrt(prop_guess*(1 - prop_guess)/n)
+prop_diff_se <- sqrt(prop_se^2 + prop_guess_se^2);
+prop_diff + c(-1.96,1.96)*prop_diff_se
+```
+
+4.10)\
+a)
+
+When assessing population estimates we know that:
+
+$$
+SE(\hat{p})=\sqrt{\hat{p}(1-\hat{p})/n}
+$$
+
+In which case the random sample of 1k will give us better population estimates.
+
+However for comparison we have:
+
+$$
+SE(\hat{p}_{\text{diff}})=\sqrt{SE(p_{\text{latino}})^2+SE(p_{\text{non latino}})^2}
+$$
+
+For this it is likely that the sample of 300 latino with 700 non-latinos will perform better, as the error of the latino estimate will be much smaller.
+
+b\)
+
+```{r}
+n_nl_a <- 850
+n_l_a <- 150
+
+n_nl_b <- 700
+n_l_b <- 300
+p <- .5
+```
+
+First we calculate the standard error of the population estimate. We have:
+
+$$
+\text{Pop}=.15\text{ Latino } +.85\text{Non-Latino}
+$$
+
+For the simple random sampling this is easy, as we are drawing directly from the population. So:
+
+```{r}
+se_pop_a <- sqrt(p*(1 - p)/(n_nl_a + n_l_a));se_pop_a
+```
+
+However for the population estimate for the stratified sample we need to first compute the error for the Latino and Non-Latino samples.
+
+```{r}
+se_l_b <- sqrt(p*(1 - p)/n_l_b)
+se_nl_b <- sqrt(p*(1 - p)/n_nl_b)
+se_l_b;se_nl_b
+```
+
+Then we have:
+
+$$
+\text{SE(Pop)}=.15 \text{ SE(Latino) }+.85 \text{ SE(Non-Latino)}
+$$
+
+So:
+
+```{r}
+se_pop_b <- .15*se_l_b + .85 * se_nl_b; se_pop_b
+```
+
+We can see that the standard error of the population estimate is larger for the stratified sample.
+
+Now for the comparison we compute:
+
+$$
+\sqrt{\text{SE(Latino)}^2+\text{SE(Non-Latino)}^2}
+$$
+
+For the random sample we need to compute the SE for the Latino and non-Latino parts of the population.
+
+```{r}
+se_l_a <- sqrt(p*(1 - p)/n_l_a)
+se_nl_a <- sqrt(p*(1 - p)/n_nl_a)
+se_l_a;se_nl_a
+```
+
+Then we compute the standard error of the comparison.
+
+```{r}
+sqrt(se_l_a^2 + se_nl_a^2)
+```
+
+For our stratified sample this is quicker, as we have already calculated the standard error for both groups.
+
+```{r}
+sqrt(se_l_b^2 + se_nl_b^2)
+```
+
+We can see that the standard error for comparison is smaller for the stratified sample.
