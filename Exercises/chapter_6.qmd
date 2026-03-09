@@ -1,0 +1,37 @@
+---
+title: "Chapter 6 Exercises"
+author: "JC"
+format: html
+editor: visual
+---
+
+```{r}
+library(rosdata)
+library(tidyverse)
+library(rstanarm)
+```
+
+6.7)
+
+5.2)
+
+```{r}
+model_sim <- function(a = 1, b = 5, n = 10, sigma = 50){
+  x_sim <- runif(n, min = 0, max = 100)
+  errors <- rnorm(n, 0, sigma)
+  y <- a + b*x_sim + errors
+  fake <- data.frame(x_sim, y)
+  fit <- stan_glm(y ~ x_sim, data = fake)
+  print(fit, digits = 2)
+  plot(x_sim, y)
+  abline(fit)
+}
+```
+
+```{r}
+model_sim()
+```
+
+```{r}
+model_sim(a = 100, b = 40, n = 200, sigma = 1000)
+```
