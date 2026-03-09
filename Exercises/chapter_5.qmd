@@ -236,3 +236,188 @@ norm_sim_sample_df |>
   geom_errorbar(aes(ymin = lower_ci_95, ymax = upper_ci_95), alpha = .5) +
   geom_hline(aes(yintercept = 6))
 ```
+
+5.8)
+
+```{r}
+experiment_sim <- function(){
+  effect <- rnorm(127,mean = .1, sd = .17)
+  avg_effect <- mean(effect)
+  sd_effect <- sd(effect)
+  lower_ci <- avg_effect + qnorm(.025)*sd_effect
+  upper_ci <- avg_effect + qnorm(.975)*sd_effect
+  interval_contains <- between(.1, lower_ci, upper_ci)
+  return(
+    c(
+      avg_effect        = avg_effect,
+      sd_effect         = sd_effect,
+      lower_ci          = lower_ci,
+      upper_ci          = upper_ci,
+      interval_contains = interval_contains
+    )
+  )
+}
+```
+
+```{r}
+set.seed(10)
+experiment_sim_sample <- replicate(n = 1000, experiment_sim())
+experiment_sim_df <- as.data.frame(t(experiment_sim_sample))
+head(experiment_sim_df)
+```
+
+b\)
+
+```{r}
+sum(experiment_sim_df$interval_contains)
+```
+
+c\)
+
+```{r}
+average_effect <- mean(experiment_sim_df$avg_effect)
+sd_effect <- mean(experiment_sim_df$sd_effect)
+average_effect;sd_effect
+```
+
+```{r}
+set.seed(123)
+
+# given values
+true_theta <- 0.10
+se <- 0.17
+n_sims <- 1000
+
+# (a) simulate 1000 point estimates
+estimates <- rnorm(n_sims, mean = true_theta, sd = se)
+
+# (b) construct 95% confidence intervals
+lower <- estimates - 1.96 * se
+upper <- estimates + 1.96 * se
+
+# check coverage
+covers_true <- lower <= true_theta & upper >= true_theta
+num_cover <- sum(covers_true)
+prop_cover <- mean(covers_true)
+
+# (c) mean and sd of simulated estimates
+mean_est <- mean(estimates)
+sd_est <- sd(estimates)
+
+# results
+num_cover
+prop_cover
+mean_est
+sd_est
+```
+
+5.9)
+
+```{r}
+significant_estimates <- estimates[lower > 0]
+mean(significant_estimates);sd(significant_estimates)
+```
+
+We can see that if we are only looking at statistically significant evidence we have a massive effect size, which is far from the actual effect size of .1.
+
+5.10)
+
+```{r}
+cost_effect_ratio_sim <- function(se_effectiveness = 1){
+  cost_diff <- rnorm(1, 600, 400)
+  effective_diff <- rnorm(1, 3, se_effectiveness)
+  ratio <- cost_diff/effective_diff
+  return(c(
+    cost_diff = cost_diff,
+    effective_diff = effective_diff,
+    ratio = ratio
+  ))
+}
+```
+
+a\)
+
+```{r}
+set.seed(5)
+cost_effect_sample_a <- replicate(1000, cost_effect_ratio_sim())
+cost_effect_a_df <- as.data.frame(t(cost_effect_sample_a))
+head(cost_effect_a_df)
+```
+
+```{r}
+cost_effect_a_df |> 
+  ggplot(aes(x = cost_diff, effective_diff)) +
+  geom_point()
+```
+
+b\)
+
+```{r}
+avg_ratio <- mean(cost_effect_a_df$ratio);avg_ratio
+ci_50 <- quantile(cost_effect_a_df$ratio,c(.25,.75));ci_50
+ci_95 <- quantile(cost_effect_a_df$ratio,c(.025,.975));ci_95
+```
+
+c\)
+
+```{r}
+set.seed(10)
+cost_effect_sample_c <- replicate(1000, 
+                                  cost_effect_ratio_sim(se_effectiveness = 2))
+cost_effect_c_df <- as.data.frame(t(cost_effect_sample_c))
+head(cost_effect_c_df)
+```
+
+```{r}
+cost_effect_c_df |> 
+  ggplot(aes(x = cost_diff, effective_diff)) +
+  geom_point()
+```
+
+```{r}
+avg_ratio <- mean(cost_effect_c_df$ratio);avg_ratio
+ci_50 <- quantile(cost_effect_c_df$ratio,c(.25,.75));ci_50
+ci_95 <- quantile(cost_effect_c_df$ratio,c(.025,.975));ci_95
+```
+
+5.12)
+
+```{r}
+treatment_assigner <- function(n, p, code = "IRA"){
+  if(n <= 0){
+    stop("N must be greater than 0")
+  }
+  if(p<0|p>1){
+    stop("Probability must be between 0 and 1 range")
+  }
+  if(code == "IRA"){
+    return(rbinom(n,1,p))
+  }
+  if(code == "CRA"){
+    if(n*p != floor(n*p)){
+      warning("N*P is not an integer, 
+              rounding to closest number to select number of treatments")
+    }
+    treatment_count <- round(n*p)
+    control_count <- n - treatment_count
+    samples <- sample.int(n, size = n)
+    treatments <- as.integer(samples <= treatment_count)
+    return(treatments)
+  }
+  if(code == "MP"){
+    if(n%%2 != 0){
+      stop("N must be divisible by two")
+    }
+    return(rep(c(1,0),n/2))
+  }
+  
+}
+```
+
+```{r}
+treatment_assigner(n = 11, p = .2, code = "CRA")
+```
+
+```{r}
+treatment_assigner(n = 10, p = .5, code = "MP")
+```
