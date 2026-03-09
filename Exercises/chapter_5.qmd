@@ -1,0 +1,146 @@
+---
+title: "Chapter 5 Exercises"
+author: "JC"
+format: html
+editor: visual
+---
+
+```{r}
+library(rosdata)
+library(tidyverse)
+```
+
+5.1)
+
+```{r}
+shooter <- function(rate = .6){
+  i <- 0
+  counter <- 0
+  while(i < 2){
+    counter <- counter + 1
+    
+    shot <- rbinom(1, size = 1, prob = rate)
+    if(shot == 0){
+      i <- i + 1
+    }
+    else{
+      i <- 0
+    }
+  }
+  return(counter)
+}
+```
+
+b\)
+
+```{r}
+set.seed(10)
+two_misses_straight <- replicate(n = 1000, shooter())
+cat("mean =", mean(two_misses_straight), ", median =", median(two_misses_straight), ", sd =", sd(two_misses_straight), ", mad sd =", mad(two_misses_straight))
+```
+
+```{r}
+hist(two_misses_straight)
+```
+
+c\)
+
+```{r}
+shooter_2 <- function(rate = .6){
+  i <- 0
+  counter <- 0
+  shots_made <- 0
+  while(i < 2){
+    counter <- counter + 1
+    
+    shot <- rbinom(1, size = 1, prob = rate)
+    if(shot == 0){
+      i <- i + 1
+    }
+    else{
+      shots_made <- shots_made + 1
+      i <- 0
+    }
+  }
+  return(c(shot_count = counter, shots_made = shots_made))
+}
+```
+
+```{r}
+set.seed(10)
+two_misses_straight_2 <- replicate(n = 1000, shooter_2())
+two_misses_straight_df <- as.data.frame(t(two_misses_straight_2))
+head(two_misses_straight_df)
+```
+
+```{r}
+two_misses_straight_df |> 
+  ggplot(aes(x = shot_count, y = shots_made/shot_count)) +
+  geom_point()
+```
+
+5.2)
+
+```{r}
+elevator_sim <- function(){
+  male <- rbinom(10,1,.5)
+  weight <- ifelse(male == 1,rnorm(1, 5.13, .17), rnorm(1, 4.96, .2))
+  return(sum(exp(weight)))
+}
+```
+
+```{r}
+set.seed(10)
+elevator_samples <- replicate(n = 10000,elevator_sim())
+mean(elevator_samples > 1750)
+```
+
+The probability that the total weight exceeds this limit is 21.2%.
+
+5.3)
+
+a\)
+
+```{r}
+dbinom(x = 3, size = 10, prob = .4)
+```
+
+b\)
+
+```{r}
+three_shots <- function(){
+  shots <- rbinom(n = 1, size = 10, prob = .4)
+  return(sum(shots) == 3)
+}
+```
+
+```{r}
+set.seed(100)
+three_shots_sims <- replicate(n = 10000,three_shots())
+mean(three_shots_sims)
+```
+
+We see that the two are very close to each other.
+
+5.4)
+
+```{r}
+twenty_sum <- function(){
+  sims <- runif(n = 20,min = 0, max = 1)
+  return(sum(sims))
+}
+```
+
+```{r}
+set.seed(10)
+twenty_sum_sims <- replicate(n = 1000, twenty_sum())
+hist(twenty_sum_sims, probability = TRUE, ylim = c(0,.4),
+     breaks = 30)
+curve(
+  dnorm(x, mean = 20*.5, sd = sqrt(20 * (1/12))),
+  add = TRUE,
+  lwd = 2
+)
+```
+
+The CLT estimate does a really good job.
