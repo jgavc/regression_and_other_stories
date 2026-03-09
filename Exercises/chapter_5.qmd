@@ -144,3 +144,95 @@ curve(
 ```
 
 The CLT estimate does a really good job.
+
+5.5)
+
+```{r}
+height_diff <- function(){
+  men <- rnorm(100, mean = 69.1, sd = 2.9)
+  men_avg <- mean(men)
+  women <- rnorm(100, mean = 63.7, sd = 2.7)
+  women_avg <- mean(women)
+  return(men_avg - women_avg)
+}
+```
+
+```{r}
+#set.seed(10)
+height_diff_sim <- replicate(n = 1000, height_diff())
+cat("mean =", mean(height_diff_sim)," sd = ",sd(height_diff_sim))
+```
+
+The exact values would be:
+
+```{r}
+cat("mean diff exact = ",69.1 - 63.7,"sd difference exact ",sqrt((2.9/10)^2 
+                                                                 + (2.7/10)^2))
+```
+
+Which is in line with our simulation.
+
+5.6)
+
+```{r}
+savings_sim <- function(){
+  cost_savings <- rnorm(1, mean = 5, sd = 4)
+  market_size <- rnorm(1, mean = 40000, sd = 10000)
+  difference <- cost_savings*market_size
+  return(difference)
+}
+```
+
+```{r}
+set.seed(10)
+savings_sim_sampling <- replicate(n = 100000, savings_sim())
+```
+
+```{r}
+mean(savings_sim_sampling)
+sd(savings_sim_sampling)
+```
+
+```{r}
+hist(savings_sim_sampling)
+```
+
+5.7)
+
+```{r}
+norm_sim <- function(){
+  norm_sample <- rnorm(10, mean = 6, sd = 4)
+  avg_value <- mean(norm_sample)
+  lower_ci_50 <- avg_value + qnorm(c(.25))*sd(norm_sample)
+  upper_ci_50 <- avg_value + qnorm(c(.75))*sd(norm_sample)
+  lower_ci_95 <- avg_value + qnorm(c(.025))*sd(norm_sample)
+  upper_ci_95 <- avg_value + qnorm(c(.975))*sd(norm_sample)
+  return(
+    c(
+      avg_value    = avg_value,
+      lower_ci_50  = lower_ci_50,
+      upper_ci_50  = upper_ci_50,
+      lower_ci_95  = lower_ci_95,
+      upper_ci_95  = upper_ci_95
+    )
+  )
+}
+```
+
+```{r}
+set.seed(10)
+norm_sim_sample <- replicate(n = 100, norm_sim())
+norm_sim_sample_df <- as.data.frame(t(norm_sim_sample))
+head(norm_sim_sample_df)
+```
+
+```{r}
+norm_sim_sample_df <- norm_sim_sample_df |> 
+  mutate(row_id = row_number())
+norm_sim_sample_df |> 
+  ggplot(aes(x = row_id, y = avg_value)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lower_ci_50, ymax = upper_ci_50)) +
+  geom_errorbar(aes(ymin = lower_ci_95, ymax = upper_ci_95), alpha = .5) +
+  geom_hline(aes(yintercept = 6))
+```
