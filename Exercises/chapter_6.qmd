@@ -35,3 +35,147 @@ model_sim()
 ```{r}
 model_sim(a = 100, b = 40, n = 200, sigma = 1000)
 ```
+
+3\)
+
+```{r}
+model_sim(a = 100, b = 40, n = 20000, sigma = 1000)
+```
+
+Estimates approach true value and uncertainties decrease.
+
+6.4)
+
+```{r}
+model_sim <- function(a = 1, b = 5, n = 10, sigma = 50){
+  x_sim <- runif(n, min = 0, max = 100)
+  errors <- rnorm(n, 0, sigma)
+  y <- a + b*x_sim + errors
+  fake <- data.frame(x_sim, y)
+  fit <- stan_glm(y ~ x_sim, data = fake)
+  return(fit)
+}
+```
+
+```{r}
+n_seq <- seq(10,100,10)
+models <- lapply(n_seq, function(n) model_sim(a = 1, b = 5, n = n, sigma = 10))
+```
+
+```{r}
+names(models) <- n_seq
+summaries <- map2_dfr(models, names(models), \(mod,n_name){
+  draws <- as.matrix(mod)
+  tibble(
+    n = n_name,
+    term = colnames(draws),
+    median = apply(draws, 2, median),
+    mad_sd = apply(draws, 2, mad)
+  )
+})
+```
+
+```{r}
+summaries <- summaries |> mutate(n = as.integer(n))
+```
+
+```{r}
+ggplot(data = summaries,aes(x = n, y = median, col = term)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = median - 2 * mad_sd, ymax = median + 2 * mad_sd))
+```
+
+The slope term is identified very early, as there is so much variation in x. Sigma and the intercept have intervals that shrink until about the n = 60 mark, as n increases our estimates get closer to the real values.
+
+6.5)
+
+```{r}
+earnings <- read.csv("Data/ROS-Examples-master/Earnings/data/earnings.csv")
+head(earnings)
+```
+
+```{r}
+average_heights <- earnings |> 
+  group_by(male) |> 
+  summarize(avg_height = mean(height))
+average_heights
+```
+
+```{r}
+male_earnings <- -26 + .6*70.08889 + 10.6;male_earnings
+female_earnings <- -26 + .6*64.48642;female_earnings
+
+```
+
+b\)
+
+```{r}
+avg_earnings <- .52*female_earnings + .48*male_earnings;avg_earnings
+```
+
+c\)
+
+```{r}
+sample_avg_earnings_by_gender <- earnings |> 
+  group_by(male) |> 
+  summarise(avg_earn = mean(earn))
+sample_avg_earnings_by_gender
+```
+
+These are about 3k off our estimates.
+
+```{r}
+mean(earnings$earn)
+```
+
+About 2k off our estimate.
+
+6.6)
+
+```{r}
+heights <- read.table("Data/ROS-Examples-master/PearsonLee/data/MotherDaughterHeights.txt", header = TRUE,sep = " ")
+head(heights)
+```
+
+```{r}
+avg_mother_height <- mean(heights$mother_height);avg_mother_height
+```
+
+```{r}
+short_moms <- heights |> filter(mother_height < avg_mother_height);head(short_moms)
+```
+
+```{r}
+fit <- stan_glm(daughter_height ~ mother_height, data = short_moms)
+```
+
+```{r}
+print(fit)
+```
+
+We can see that the intercept of 30.4 and slope of .5 are very close to the intercept of 30 and slope of .54 when using the full dataset.
+
+b\)
+
+```{r}
+avg_daughter_height <- mean(heights$daughter_height);avg_daughter_height
+```
+
+```{r}
+short_daughters <- heights |> filter(daughter_height < avg_daughter_height)
+head(short_daughters)
+```
+
+```{r}
+fit <- stan_glm(daughter_height ~ mother_height, data = short_daughters)
+```
+
+```{r}
+print(fit)
+```
+
+The intercept jumps a lot, and the slope is much smaller.
+
+c\)
+
+When we filter on
