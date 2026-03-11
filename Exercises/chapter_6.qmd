@@ -178,4 +178,62 @@ The intercept jumps a lot, and the slope is much smaller.
 
 c\)
 
-When we filter on
+We know that the relationship between a mother and daughter's height is that a daughter has a more average height than their mother.
+
+When we filter to only look at shorter mothers, we still see the relationship we are anticipating. This is because if a mother is very short, their daughter is likely to be taller and closer to average. If a mother is close to average, their daughter is also likely to be close to average.
+
+On the other hand when we look at only short daughters we know that mothers could also be short, and their daughters height is likely closer to average. Or that the mother is taller, and we are only looking at the daughters who end up short. We end up looking at a biased sample, where the taller mothers included in this filtered dataset only have had shorter daughters. This reduces the effect we estimate in the data.
+
+We are also violating the assumption of i.i.d errors, errors for points where a mother is tall will all be biased downward due to our sub setting.
+
+```{r}
+ggplot(data = short_daughters, aes(y = daughter_height, x = mother_height)) +
+  geom_jitter()
+```
+
+6.8)
+
+```{r}
+flight_school <- function(maneuver_error = 2){
+  true_ability <- runif(500,min = 2,max = 8)
+  exam_one_start <- true_ability + rnorm(500, 0, maneuver_error)
+  print(true_ability[1:5]);print(exam_one_start[1:5])
+  exam_one <- case_when(
+    exam_one_start < 0  ~ 0,
+    exam_one_start > 10 ~ 10,
+    TRUE                ~ exam_one_start
+  )
+  exam_two_start <- true_ability + rnorm(500, 0, maneuver_error)
+  exam_two <- case_when(
+    exam_two_start < 0  ~ 0,
+    exam_two_start > 10 ~ 10,
+    TRUE                ~ exam_two_start)
+  
+  return(data.frame(exam_one,exam_two))
+}
+```
+
+```{r}
+flight_scores <- flight_school() |>
+  mutate(reinforcement = case_when(
+    exam_one < 3 ~ "Punished",
+    exam_one > 7 ~ "Praised",
+    TRUE         ~ "None"
+  ))
+flight_scores |> 
+  ggplot(aes(x = exam_one, y= exam_two)) +
+  geom_point(aes(color = reinforcement)) +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+stan_glm(exam_two ~ exam_one, data = flight_scores)
+```
+
+```{r}
+flight_scores |> 
+  group_by(reinforcement) |> 
+  summarise(avg_change = mean(exam_two - exam_one))
+```
+
+We can see that those who are praised do worse on the next maneuver, and those who are punished do better. Since this is simulated we can see that there is no causal effect here, it is simply regression to the mean.
