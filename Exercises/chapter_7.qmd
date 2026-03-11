@@ -1,0 +1,108 @@
+---
+title: "Chapter 7 Exercises"
+author: "JC"
+format: html
+editor: visual
+---
+
+```{r}
+library(rosdata)
+library(tidyverse)
+library(rstanarm)
+source("Functions/stan_glm_plot_helpers.R")
+```
+
+7.1)
+
+It would impact our model by dampening the effect of income growth on vote share. In periods of high inflation, say the 70s, income growth increased by a large margin but would do a poor job of predicting the winner of elections. The model would in turn reduce the slope of effect from growth in personal income. Residual error would get larger as well.
+
+7.2)
+
+```{r}
+linear_sim <- function(n = 100, a = 5,b = 7,sigma = 3){
+  x <- runif(n, min = 0, max = 50)
+  error <- rnorm(n, 0, sigma)
+  y <- a + b*x + error
+  return(data.frame(x,y))
+}
+```
+
+```{r}
+linear_result <- linear_sim()
+```
+
+```{r}
+fit <- stan_glm(y ~ x, data = linear_result)
+```
+
+```{r}
+print(fit)
+```
+
+```{r}
+ggplot(data = linear_result,aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  annotate("text",x = 25, y = 300, label = "5.4 + 7x")
+```
+
+7.3)
+
+```{r}
+quadratic_sim <- function(n = 100, a = 5,b = 7, c = 10, sigma = 3){
+  x <- runif(n, min = 0, max = 50)
+  error <- rnorm(n, 0, sigma)
+  y <- a + b*x + c*x^2 + error
+  return(data.frame(x,y))
+}
+```
+
+```{r}
+quad_data <- quadratic_sim()
+quad_data |> 
+  ggplot(aes(x = x, y = y)) +
+  geom_point()
+```
+
+a\)
+
+```{r}
+fit <- stan_glm(y ~ x, data = quad_data)
+```
+
+```{r}
+grid <- tibble(x = seq(min(quad_data$x), max(quad_data$x), length.out = 1000))
+fit_df <- stan_glm_fit_df(fit, grid)
+```
+
+```{r}
+quad_data |> 
+  ggplot(aes(x = x, y = y)) +
+  geom_point() +
+  geom_line(data = fit_df, aes(y = .mean))
+```
+
+We can see that the "best linear fit", aka the one that minimizes lse does not do a good job here because the true relationship is quadratic.
+
+7.5)
+
+```{r}
+linear_converage_sim <- function(n = 100, a = 5,b = 7,sigma = 3){
+  x <- runif(n, min = 0, max = 10)
+  error <- rnorm(n, 0, sigma)
+  y <- a + b*x + error
+  fake_data <- data.frame(x,y)
+  fake_fit <- stan_glm(y ~ x, data = fake_data)
+  ci <- posterior_interval(fake_fit)
+  return(data.frame(ci))
+}
+```
+
+```{r}
+ci <- linear_converage_sim()
+```
+
+```{r}
+n_seq <- c(10,30,100,300,1000,3000,10000,30000)
+lapply(n_seq, function(n) linear_converage_sim(n = n))
+```
