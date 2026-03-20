@@ -106,3 +106,97 @@ ci <- linear_converage_sim()
 n_seq <- c(10,30,100,300,1000,3000,10000,30000)
 lapply(n_seq, function(n) linear_converage_sim(n = n))
 ```
+
+```{r}
+election_df<- read.table(
+  "Data/ROS-Examples-master/ElectionsEconomy/data/hibbs.dat", header = TRUE)
+head(election_df)
+```
+
+```{r}
+election_df <- election_df |> 
+  mutate(high_income_growth = growth > 2)
+
+head(election_df |> select(year,growth,high_income_growth))
+```
+
+```{r}
+fit <- stan_glm(vote ~ high_income_growth, data = election_df)
+```
+
+```{r}
+print(fit)
+```
+
+The effect from high income growth is larger, but so is the standard error. Using the residual error as a way of comparing the models we see that our fit got worse.
+
+7.7)
+
+```{r}
+model_sim <- function(){
+  x = runif(100,0,20)
+  error = rnorm(100,0,5)
+  y = 2 + 3*x + error
+  fake = data.frame(x,y)
+  fit <- stan_glm(y ~ x, data = fake)
+  return(list(
+    fake = fake,
+    fit = fit
+  ))
+}
+```
+
+```{r}
+output <- model_sim()
+```
+
+```{r}
+print(output$fit)
+```
+
+```{r}
+ggplot(data = output$fake, aes(x = x, y = y)) +
+  geom_point()
+```
+
+```{r}
+grid <- tibble(x = seq(min(output$fake$x), max(output$fake$x), length.out = 1000))
+fit_df <- stan_glm_fit_df(output$fit, grid)
+```
+
+```{r}
+ggplot(data = output$fake, aes(x = x, y = y)) +
+  geom_point() +
+  geom_line(data = fit_df, aes(y = .mean))
+```
+
+b\)
+
+```{r}
+print(output$fit)
+```
+
+The coefficients are quite close, reasonably close depends on how you view it. I think a good barometer is whether the true effect is in the 95% interval.
+
+7.9)
+
+```{r}
+fit <- stan_glm(growth ~ vote, data = election_df)
+```
+
+```{r}
+print(fit)
+```
+
+```{r}
+
+```
+
+```{r}
+ggplot(aes(x = vote, y = growth), data = election_df) +
+  geom_point() +
+  geom_smooth(method = "lm")
+  
+```
+
+We can see that the same relationship appears, this would be useful for predicting previous economic growth given the election result but that is about it. We wouldn't want to get confused and say that the economy is expected to grow more when votes for the incumbent party is high.

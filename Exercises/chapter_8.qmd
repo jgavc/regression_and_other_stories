@@ -1,0 +1,259 @@
+---
+title: "Chapter 8 Exercises"
+format: html
+editor: visual
+---
+
+```{r}
+library(rosdata)
+library(tidyverse)
+library(rstanarm)
+source("Functions/stan_glm_plot_helpers.R")
+```
+
+8.1)
+
+```{r}
+election_df<- read.table(
+  "Data/ROS-Examples-master/ElectionsEconomy/data/hibbs.dat", header = TRUE)
+head(election_df)
+```
+
+```{r}
+rss <- function(x, y, a, b){
+  resid <- y - (a + b*x)
+  return(sum(resid^2))
+}
+```
+
+```{r}
+rss(election_df$growth,election_df$vote,10,2)
+```
+
+```{r}
+rss(election_df$growth,election_df$vote,40,2)
+```
+
+```{r}
+rss(election_df$growth,election_df$vote,40,6)
+```
+
+```{r}
+intercept = 46.3
+b_seq = seq(-10,10,.01)
+rss_seq <- sapply(b_seq, function(b) rss(election_df$growth,
+                                         election_df$vote, intercept, b))
+df_seq <- data.frame(b_seq, rss_seq)
+min_point <- b_seq[which.min(rss_seq)]
+```
+
+```{r}
+ggplot(data = df_seq, aes(x = b_seq, rss_seq)) +
+  geom_line() +
+  geom_vline(xintercept = min_point)
+```
+
+Yes, this is truly where RSS is minimized.
+
+8.2)
+
+```{r}
+log_like <- function(x, y, a, b){
+  n <- length(x)
+  sigma_hat <- sqrt(1/n * sum((y - (a + b*x))^2))
+  mu <- a + b*x
+  log_like <- sum(log(1/(sqrt(2 * pi) * sigma_hat) * 
+   exp(-1/2 * ((y - mu)/sigma_hat)^2)))
+  
+  return(log_like)
+}
+```
+
+```{r}
+intercept = 46.3
+b_seq = seq(-10,10,.01)
+ll_seq <- sapply(b_seq, function(b) log_like(election_df$growth,
+                                         election_df$vote, intercept, b))
+df_seq <- data.frame(b_seq, ll_seq)
+max_point <- b_seq[which.max(ll_seq)]
+```
+
+```{r}
+ggplot(data = df_seq, aes(x = b_seq, y = ll_seq)) +
+  geom_line() +
+  geom_vline(xintercept = max_point)
+```
+
+We can see that the MLE of b is the same as the LSE.
+
+8.3)
+
+```{r}
+rss_abs <- function(x, y, a, b){
+  resid <- y - (a + b*x)
+  return(sum(abs(resid)))
+}
+```
+
+```{r}
+intercept = 46.3
+b_seq = seq(-10,10,.01)
+rss_abs_seq <- sapply(b_seq, function(b) rss_abs(election_df$growth,
+                                         election_df$vote, intercept, b))
+df_seq <- data.frame(b_seq, rss_abs_seq)
+min_point <- b_seq[which.min(rss_abs_seq)]
+```
+
+```{r}
+ggplot(data = df_seq, aes(x = b_seq, rss_abs_seq)) +
+  geom_line() +
+  geom_vline(xintercept = min_point)
+```
+
+```{r}
+min_point
+```
+
+This is while holding a constant however, lets see if we can find the minimimum for absolute residuals.
+
+```{r}
+a_seq <- seq(20,80,.1)
+```
+
+```{r}
+grid <- expand.grid(a = a_seq, b = b_seq)
+```
+
+```{r}
+grid$abs_loss <- mapply(function(a,b) rss_abs(election_df$growth, election_df$vote, a, b),
+                        grid$a, grid$b)
+```
+
+```{r}
+grid[which.min(grid$abs_loss), ]
+```
+
+```{r}
+ggplot(data = grid, aes(x = a, y = b, fill = abs_loss)) +
+  geom_tile() +
+  labs(x = "Intercept (a)", y = "Slope (b)", fill = "L1 loss")
+```
+
+```{r}
+best <- grid[which.min(grid$abs_loss), ]
+
+ggplot(grid, aes(x = b, y = a, z = abs_loss)) +
+  geom_contour() +
+  geom_point(data = best, aes(x = b, y = a), inherit.aes = FALSE, size = 3)
+```
+
+```{r}
+ggplot(grid, aes(x = b, y = a, z = abs_loss)) +
+  geom_contour_filled()
+```
+
+```{r}
+ggplot(grid, aes(x = b, y = a, fill = abs_loss)) +
+  geom_raster()
+```
+
+8.4)
+
+```{r}
+set.seed(1)
+
+x <- 1:20
+y <- 2 + 0.5 * x + rnorm(20, 0, 0.5)
+x <- c(x, 40)
+y <- c(y, -100)   # extreme and opposite direction
+plot_df <- data.frame(x,y)
+```
+
+```{r}
+a_seq <- seq(-100,100,1)
+b_seq <- seq(-20,20,.5)
+grid <- expand.grid(a = a_seq, b = b_seq)
+```
+
+Abs Res Min:
+
+```{r}
+grid$abs_loss <- mapply(function(a,b) rss_abs(x, y, a, b),
+                        grid$a, grid$b)
+```
+
+```{r}
+abs_resid_min <- grid[which.min(grid$abs_loss), ];abs_resid_min
+```
+
+RSS min:
+
+```{r}
+grid$rss <- mapply(function(a,b) rss(x, y, a, b),
+                        grid$a, grid$b)
+```
+
+```{r}
+rss_min <- grid[which.min(grid$rss), ];rss_min
+```
+
+```{r}
+ggplot(plot_df, aes(x = x, y = y)) +
+  geom_point() +
+  geom_abline(intercept = abs_resid_min$a, slope = abs_resid_min$b, col = "red") +
+  geom_abline(intercept = rss_min$a, slope = rss_min$b, col = "blue")
+```
+
+We can see the coefficents differ significantly as the RSS fit gets moved closer to the outlier point because the squared residual is so large. For the absolute residual it is closer to the non-outlier data as the absolute residual is less skewed by outliers.
+
+8.8)
+
+a\)
+
+```{r}
+set.seed(10)
+x_sim <- runif(100,0,20)
+error <- rnorm(100,0,5)
+y <- 2 + 3*x_sim + error
+sim_df <- data.frame(x_sim,y)
+```
+
+```{r}
+stan_fit <- stan_glm(y ~ x_sim, data = sim_df)
+lm_fit <- lm(y ~ x_sim, data = sim_df)
+```
+
+```{r}
+print(stan_fit)
+print(lm_fit)
+```
+
+```{r}
+ggplot(data = sim_df, aes(x = x_sim, y = y)) +
+  geom_point() +
+  geom_abline(intercept = coef(stan_fit)[1], slope = coef(stan_fit)[2], 
+              col = "blue") +
+  geom_abline(intercept = coef(lm_fit)[1], slope = coef(lm_fit)[2], col = "red")
+```
+
+c\)
+
+```{r}
+set.seed(10)
+x_sim <- runif(3,19,20)
+error <- rnorm(3,0,20)
+y <- 2 + 3*x_sim + error
+sim_df <- data.frame(x_sim,y)
+```
+
+```{r}
+stan_fit <- stan_glm(y ~ x_sim, data = sim_df)
+lm_fit <- lm(y ~ x_sim, data = sim_df)
+```
+
+```{r}
+print(stan_fit)
+summary(lm_fit)
+```
+
+When we have only three points the prior from stan_glm is more prevalent.
